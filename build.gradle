@@ -19,7 +19,7 @@
 
     allprojects {
         repositories {
-            maven{url getRepositoryDir()}
+//            maven{url getRepositoryDir()}
             google()
             jcenter()
 

@@ -64,7 +64,7 @@ class ScreenRecordService : Service() {
                     baseContext.getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager?
                 requestCode = getIntExtra(SCAN, -1)
                 resultCode = getIntExtra("resultCode", -1)
-                mData = getParcelableExtra("data") as Intent
+                mData = getParcelableExtra<Intent>("data")
                 mediaProjection = mediaProjectionManager!!.getMediaProjection(resultCode, mData!!)
                 // 实测，部分手机上录制视频的时候会有弹窗的出现，所以我们需要做一个 150ms 的延迟
                 Handler().postDelayed({
