@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="MyCustomBetterPickersDialogs" parent="BetterPickersRadialTimePickerDialog.PrimaryColor">
+        <item name="bpPreHeaderBackgroundColor">?attr/colorPrimaryDark</item>
+        <item name="bpHeaderBackgroundColor">?attr/colorPrimary</item>
+        <item name="bpHeaderSelectedTextColor">@android:color/white</item>
+        <item name="bpHeaderUnselectedTextColor">@android:color/white</item>
+
+        <item name="bpBodyBackgroundColor">@android:color/white</item>
+        <item name="bpBodySelectedTextColor">?attr/colorPrimary</item>
+        <item name="bpBodyUnselectedTextColor">?attr/colorPrimaryDark</item>
+
+        <item name="bpRadialBackgroundColor">?attr/colorPrimaryDark</item>
+        <item name="bpRadialTextColor">@android:color/white</item>
+        <item name="bpRadialPointerColor">@android:color/black</item>
+
+        <item name="bpButtonsBackgroundColor">?attr/colorPrimaryDark</item>
+        <item name="bpButtonsTextColor">@android:color/white</item>
+    </style>
+
+    <style name="progress_dialog" parent="@style/Theme.MaterialComponents.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
+
+    <style name="Widget.Shrine.Button.TextButton" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+        <item name="android:minWidth">0dp</item>
+    </style>
+
+    <style name="Vi_MaterialButton_NO_INSET" parent="Widget.MaterialComponents.Button">
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+    </style>
+
+    <style name="Vi_MaterialButton_NO_CORNER_RADIUS" parent="Vi_MaterialButton_NO_INSET">
+        <item name="cornerRadius">0dp</item>
+    </style>
+
+    <style name="Vi_MaterialButton_TEXT_NO_INSET" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+    </style>
+
+    <style name="Vi_MaterialButton_TEXT_NO_CORNER_RADIUS" parent="Vi_MaterialButton_TEXT_NO_INSET">
+        <item name="cornerRadius">0dp</item>
+    </style>
+
+</resources>
