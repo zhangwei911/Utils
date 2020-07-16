@@ -517,7 +517,7 @@ object FileUtils {
      * @param file 文件路径
      * @return md5
      */
-    fun getFileMd5(file: File?): String? {
+    fun getFileMd5(file: File?): String {
         val messageDigest: MessageDigest
         var randomAccessFile: RandomAccessFile? = null
         try {
