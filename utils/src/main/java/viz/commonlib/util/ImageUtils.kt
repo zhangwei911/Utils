@@ -1,9 +1,11 @@
 package viz.commonlib.util
 
+import android.app.Activity
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Matrix
 import android.media.MediaScannerConnection
 import android.net.Uri
@@ -11,7 +13,11 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import android.view.View
+import android.view.ViewTreeObserver
+import com.viz.tools.apk.ScreenUtils
 import com.viz.tools.l
+import org.xutils.common.util.DensityUtil
 import viz.commonlib.util.FileUtils.getPath
 import java.io.File
 import java.io.FileInputStream
@@ -199,5 +205,110 @@ object ImageUtils {
     fun getMimeType(file: File): String {
         val fileNameMap = URLConnection.getFileNameMap()
         return fileNameMap.getContentTypeFor(file.name)
+    }
+
+
+
+    /**
+     * 屏幕截图
+     * @param activity
+     * @return
+     */
+    fun screenShot(activity: Activity?, onResult: ((filePath: String) -> Unit)): Bitmap? {
+        if (activity == null) {
+            l.e("screenShot--->activity is null")
+            return null
+        }
+        val view: View = activity.window.decorView
+        //允许当前窗口保存缓存信息
+        view.setDrawingCacheEnabled(true)
+        view.buildDrawingCache()
+        val navigationBarHeight: Int = ScreenUtils.getNavigationBarHeight(activity)
+
+
+        //获取屏幕宽和高
+        val width: Int = DensityUtil.getScreenWidth()
+        val height: Int = DensityUtil.getScreenHeight()
+
+        // 全屏不用考虑状态栏，有导航栏需要加上导航栏高度
+        var bitmap: Bitmap? = null
+        try {
+            bitmap = Bitmap.createBitmap(view.getDrawingCache(), 0, 0, width,
+                    height + navigationBarHeight)
+        } catch (e: java.lang.Exception) {
+            // 这里主要是为了兼容异形屏做的处理，我这里的处理比较仓促，直接靠捕获异常处理
+            // 其实vivo oppo等这些异形屏手机官网都有判断方法
+            // 正确的做法应该是判断当前手机是否是异形屏，如果是就用下面的代码创建bitmap
+            var msg = e.message
+            // 部分手机导航栏高度不占窗口高度，不用添加，比如OppoR15这种异形屏
+            if (msg!!.contains("<= bitmap.height()")) {
+                try {
+                    bitmap = Bitmap.createBitmap(view.getDrawingCache(), 0, 0, width,
+                            height)
+                } catch (e1: java.lang.Exception) {
+                    msg = e1.message
+                    // 适配Vivo X21异形屏，状态栏和导航栏都没有填充
+                    if (msg!!.contains("<= bitmap.height()")) {
+                        try {
+                            bitmap = Bitmap.createBitmap(view.getDrawingCache(), 0, 0, width,
+                                    height - ScreenUtils.getStatusBarHeight(view.context))
+                        } catch (e2: java.lang.Exception) {
+                            e2.printStackTrace()
+                        }
+                    } else {
+                        e1.printStackTrace()
+                    }
+                }
+            } else {
+                e.printStackTrace()
+            }
+        }
+
+        //销毁缓存信息
+        view.destroyDrawingCache()
+        view.setDrawingCacheEnabled(false)
+        if (null != bitmap) {
+            try {
+                val filePath = ImageUtils.saveBitmap(view.context, bitmap)
+                l.d("--->截图保存地址：$filePath")
+                onResult.invoke(filePath)
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+        return bitmap
+    }
+
+    /**
+     * view截图
+     * @return
+     */
+    fun viewShot(v: View, onResult: ((filePath: String) -> Unit)) {
+        if (null == v) {
+            l.e("view is null")
+            return
+        }
+        v.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                    v.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                } else {
+                    v.viewTreeObserver.removeGlobalOnLayoutListener(this)
+                }
+                // 核心代码start
+                val bitmap = Bitmap.createBitmap(v.width, v.height, Bitmap.Config.ARGB_8888)
+                val c = Canvas(bitmap)
+                v.layout(0, 0, v.layoutParams.width, v.layoutParams.height)
+                v.draw(c)
+                // end
+                try {
+                    val savePath = ImageUtils.saveBitmap(v.context, bitmap)
+                    l.d("--->截图保存地址：$savePath")
+                    onResult.invoke(savePath)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+            }
+        })
     }
 }
