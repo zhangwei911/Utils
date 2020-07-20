@@ -53,6 +53,20 @@ class ScreenRecordService : Service() {
     var requestCode = -1
     var resultCode = -1
     var mData: Intent? = null
+    companion object{
+        const val BROADCAST_SCREEN_RECORD = "viz.commonlib.broadcast.screenRecord"
+    }
+    private val intentStatus = Intent(BROADCAST_SCREEN_RECORD)
+
+    enum class RECORD_STATUS {
+        START,
+        START_ERROR,
+        NOT_SUPPORT,
+        STOP,
+        STOP_ERROR,
+        FINISH
+    }
+
     override fun onBind(intent: Intent?): IBinder {
         return RecordBinder()
     }
@@ -61,7 +75,7 @@ class ScreenRecordService : Service() {
         intent?.apply {
             try {
                 mediaProjectionManager =
-                    baseContext.getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager?
+                        baseContext.getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager?
                 requestCode = getIntExtra(SCAN, -1)
                 resultCode = getIntExtra("resultCode", -1)
                 mData = getParcelableExtra<Intent>("data")
@@ -73,12 +87,15 @@ class ScreenRecordService : Service() {
                             l.d("start")
                             mediaRecorder?.start()
                             isRecording = true
+                            refreshStatus(RECORD_STATUS.START)
                         } catch (e: Exception) {
                             Toast.show(baseContext, R.string.screen_record_start_failed)
                             e.printStackTrace()
+                            refreshStatus(RECORD_STATUS.START_ERROR)
                         }
                     } else {
                         Toast.show(baseContext, R.string.phone_not_support_screen_record)
+                        refreshStatus(RECORD_STATUS.NOT_SUPPORT)
                     }
                 }, 150)
             } catch (e: Exception) {
@@ -130,11 +147,11 @@ class ScreenRecordService : Service() {
             val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             //数字是随便写的“40”，
             nm.createNotificationChannel(
-                NotificationChannel(
-                    "40",
-                    "App Service",
-                    NotificationManager.IMPORTANCE_DEFAULT
-                )
+                    NotificationChannel(
+                            "40",
+                            "App Service",
+                            NotificationManager.IMPORTANCE_DEFAULT
+                    )
             )
             val builder = NotificationCompat.Builder(this, "40")
 
@@ -154,9 +171,9 @@ class ScreenRecordService : Service() {
         l.d("initRecorder")
         var result = true
         savePath =
-            FileUtils.getPath(baseContext) + "/${baseContext.packageName}/screen/" + TimeFormat.getCurrentTime(
-                "yyyyMMdd"
-            )
+                FileUtils.getPath(baseContext) + "/${baseContext.packageName}/screen/" + TimeFormat.getCurrentTime(
+                        "yyyyMMdd"
+                )
         saveName = PreferencesUtils.getString(baseContext, "videoId", "") + ".mp4"
         // 创建文件夹
         val f = File(savePath)
@@ -200,8 +217,8 @@ class ScreenRecordService : Service() {
                 l.d("prepare")
                 prepare()
                 virtualDisplay = mediaProjection?.createVirtualDisplay(
-                    "MainScreen", width, height, dm.densityDpi,
-                    DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, surface, null, null
+                        "MainScreen", width, height, dm.densityDpi,
+                        DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, surface, null, null
                 )
                 l.d("initRecorder 成功")
             } catch (e: Exception) {
@@ -229,16 +246,24 @@ class ScreenRecordService : Service() {
                     setPreviewDisplay(null)
                     stop()
                     l.d("stop success")
+                    refreshStatus(RECORD_STATUS.STOP)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 l.e("stopRecorder() error！${e.message}")
+                refreshStatus(RECORD_STATUS.STOP_ERROR)
             } finally {
                 mediaRecorder?.reset()
                 virtualDisplay?.release()
                 mediaProjection?.stop()
+                refreshStatus(RECORD_STATUS.FINISH)
             }
         }
+    }
+
+    private fun refreshStatus(status: RECORD_STATUS) {
+        intentStatus.putExtra("status", status)
+        sendBroadcast(intentStatus)
     }
 
     fun clearAll() {

@@ -1,8 +1,10 @@
 package viz.commonlib.util
 
 import android.app.Activity
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
@@ -15,6 +17,7 @@ import com.viz.tools.Toast
 import com.viz.tools.l
 import viz.commonlib.utils.R
 import viz.commonlib.service.ScreenRecordService
+import viz.commonlib.service.ScreenRecordService.Companion.BROADCAST_SCREEN_RECORD
 import java.io.File
 import java.util.*
 import kotlin.math.min
@@ -31,7 +34,7 @@ class ScreenRecordUtil {
     var isRecording = false
     fun request(activity: Activity, requestCode: Int) {
         mediaProjectionManager =
-            activity.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                activity.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         val intent = mediaProjectionManager!!.createScreenCaptureIntent()
         val packageManager: PackageManager = activity.packageManager
         if (packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
@@ -42,13 +45,15 @@ class ScreenRecordUtil {
         }
     }
 
+    private var broadcastReceiverScreenRecord: BroadcastReceiver? = null
+
     fun result(
-        activity: Activity,
-        requestCodeStart: Int,
-        requestCode: Int,
-        resultCode: Int,
-        data: Intent?,
-        onResult: ((isAllow: Boolean) -> Unit)
+            activity: Activity,
+            requestCodeStart: Int,
+            requestCode: Int,
+            resultCode: Int,
+            data: Intent?,
+            onResult: ((isAllow: Boolean) -> Unit)
     ) {
         if (requestCode == requestCodeStart) {
             if (resultCode == Activity.RESULT_OK) {
@@ -76,5 +81,24 @@ class ScreenRecordUtil {
         isRecording = false
         val service = Intent(activity, ScreenRecordService::class.java)
         activity.stopService(service)
+    }
+
+    fun registerBroadcast(activity: Activity, onReceive: (status: ScreenRecordService.RECORD_STATUS) -> Unit) {
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(BROADCAST_SCREEN_RECORD)
+        broadcastReceiverScreenRecord = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, data: Intent?) {
+                data?.getSerializableExtra("status")?.apply {
+                    if (this is ScreenRecordService.RECORD_STATUS) {
+                        onReceive.invoke(this)
+                    }
+                }
+            }
+        }
+        activity.registerReceiver(broadcastReceiverScreenRecord, intentFilter)
+    }
+
+    fun unregisterBroadcast(activity: Activity) {
+        activity.unregisterReceiver(broadcastReceiverScreenRecord ?: return)
     }
 }
