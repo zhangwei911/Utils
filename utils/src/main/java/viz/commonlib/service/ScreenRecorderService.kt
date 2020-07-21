@@ -53,9 +53,11 @@ class ScreenRecordService : Service() {
     var requestCode = -1
     var resultCode = -1
     var mData: Intent? = null
-    companion object{
+
+    companion object {
         const val BROADCAST_SCREEN_RECORD = "viz.commonlib.broadcast.screenRecord"
     }
+
     private val intentStatus = Intent(BROADCAST_SCREEN_RECORD)
 
     enum class RECORD_STATUS {
@@ -190,8 +192,17 @@ class ScreenRecordService : Service() {
         }
         mediaRecorder = MediaRecorder()
         val dm = baseContext.resources.displayMetrics
-        val width = min(dm.widthPixels, 1080)
-        val height = min(dm.heightPixels, 1920)
+        val isOrientationPortrait = PreferencesUtils.getBoolean(baseContext, "isOrientationPortrait", false)
+        val width = min(dm.widthPixels, if (isOrientationPortrait) {
+            1080
+        } else {
+            1920
+        })
+        val height = min(dm.heightPixels, if (isOrientationPortrait) {
+            1920
+        } else {
+            1080
+        })
         mediaRecorder?.apply {
             // 可以设置是否录制音频
             if (recordAudio) {
