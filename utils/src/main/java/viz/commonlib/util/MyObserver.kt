@@ -7,7 +7,7 @@ import androidx.lifecycle.OnLifecycleEvent
 /**
  * @author wei
  */
-class MyObserver(var lifecycle: Lifecycle, var className: String) :
+open class MyObserver(var lifecycle: Lifecycle, var className: String) :
     LifecycleObserver {
 
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
